@@ -7,6 +7,7 @@ class Spoticon(object):
 
     def __init__(self, stdScr):
 
+        #Default curses screen
         self.stdScr = stdScr
 
         #Initial curses setup
@@ -50,6 +51,7 @@ class Spoticon(object):
         ''' 
 
         self.mainScr.addstr(1, 1, introScreen)
+        self.mainScr.refresh()
 
 
     def listen_for_commands(self):
@@ -97,18 +99,21 @@ class Spoticon(object):
         if(self.results):
             self.display_main_screen()
 
-
+    
+    #Scrolling code pulled from Lyle Scott's Python-curses-Scrolling-Example
+    #https://github.com/LyleScott/Python-curses-Scrolling-Example/
     def display_main_screen(self):
         self.mainScr.erase()
         top = self.topLineNum
         bottom = self.topLineNum + self.mainScrHeight
         for (index,line,) in enumerate(self.results):
             linenum = self.topLineNum + index
-        
+            lineString = self.format_line(line)
+
             if index != self.highlightLineNum:
-                self.mainScr.addstr(index, 0, line.get('song_name'))
+                self.mainScr.addstr(index, 0, lineString)
             else:
-                self.mainScr.addstr(index, 0, line.get('song_name'), curses.A_BOLD)
+                self.mainScr.addstr(index, 0, lineString, curses.A_BOLD)
         self.mainScr.refresh()
 
     def updown(self, increment):
@@ -128,12 +133,18 @@ class Spoticon(object):
             self.highlightLineNum = nextLineNum
 
 
+    def format_line(self, line):
+        return '{0:<45} {1:^25} {2:>25}'.format(line.get('song_name')[:30], line.get('album_name')[:20], line.get('artist_name')[:20])
+
+        
     def parse_spotify_results(self, results):
         res = []
         for track in results['tracks']['items']:
             song_name = track['name']
+            album_name = track['album']['name']
+            artist_name = track['artists'][0]['name']
             song_uri = track['uri']
-            res.append({'song_name': song_name, 'song_uri': song_uri})
+            res.append({'song_name': song_name, 'album_name': album_name, 'artist_name': artist_name, 'song_uri': song_uri})
         return res
 
 
