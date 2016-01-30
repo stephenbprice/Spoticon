@@ -1,4 +1,5 @@
 import curses
+import pdb
 
 
 class Search_Screen(object):
@@ -10,6 +11,7 @@ class Search_Screen(object):
 
         #Variables for Scrolling Screen
         self.results = []
+        self.formattedResults = []
         self.topLineNum = 0
         self.highlightLineNum = 0
 
@@ -18,29 +20,76 @@ class Search_Screen(object):
     def refresh(self):
         self.win.refresh()
 
-    def format_track(self, track):
-        return '{0:<45} {1:^25} {2:>25}'.format(track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
+    def format_line(self, line):
+        if line['category'] == 'track':
+            return self.format_track(line)
+        elif line['category'] == 'album':
+            return self.format_album(line)
+        elif line['category'] == 'artist':
+            return self.format_artist(line)
+        elif line['category'] == 'title_bar':
+            return self.format_title_bar(line)
+        else:
+            return ''
 
-    def get_highlighted_track(self):
-        return self.results[self.highlightLineNum]
+    def format_track(self, track):
+        return '{0:<5} {1:<45} {2:^25} {3:>25}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
+
+    def format_album(self, album):
+        return '{0:<103}'.format(album.get('album_name')[:30])
+
+    def format_artist(self, artist):
+        return '{0:<103}'.format(artist.get('artist_name')[:50])
+
+    def format_title_bar(self, title_bar):
+        return '{0:<103}'.format(title_bar.get('title'))
+
+    def get_highlighted_line(self):
+        return self.formattedResults[self.highlightLineNum]
+
+    def format_results(self):
+        self.formattedResults = []
+
+        if 'artists' in self.results:
+            self.formattedResults.append({
+                'title': 'ARTISTS',
+                'category': 'title_bar',
+            })
+            self.formattedResults += self.results['artists']
+        if 'albums' in self.results:
+            self.formattedResults.append({
+                'title': 'ALBUMS',
+                'category': 'title_bar',
+            })
+            self.formattedResults += self.results['albums']
+        if 'tracks' in self.results:
+            self.formattedResults.append({
+                'title': 'TRACKS',
+                'category': 'title_bar',
+            })
+            self.formattedResults += self.results['tracks']
 
     def draw_screen(self, results):
         if results != self.results:
             self.results = results
+            self.format_results()
             self.topLineNum = 0
             self.highlightLineNum = 0
 
         self.win.erase()
         top = self.topLineNum
         bottom = self.topLineNum + self.height
-        for (index,line,) in enumerate(results[top:bottom]):
+        for (index,line,) in enumerate(self.formattedResults[top:bottom]):
             linenum = self.topLineNum + index
-            lineString = self.format_track(line)
+            lineString = self.format_line(line)
 
             if index != self.highlightLineNum:
-                self.win.addstr(index, 0, lineString)
+                if line['category'] == 'title_bar':
+                    self.win.addstr(index, 0, lineString, curses.A_BOLD)
+                else:
+                    self.win.addstr(index, 0, lineString)
             else:
-                self.win.addstr(index, 0, lineString, curses.A_BOLD)
+                self.win.addstr(index, 0, lineString, curses.A_REVERSE)
         self.win.refresh()
 
     def updown(self, increment):
@@ -50,14 +99,14 @@ class Search_Screen(object):
         if increment == -1 and self.highlightLineNum == 0 and self.topLineNum != 0:
             self.topLineNum -= 1
             return
-        elif increment == 1 and nextLineNum == self.height and (self.topLineNum + self.height) != len(self.results):
+        elif increment == 1 and nextLineNum == self.height and (self.topLineNum + self.height) != len(self.formattedResults):
             self.topLineNum += 1
             return
 
         #Scroll highlight line
         if increment == -1 and (self.topLineNum != 0 or self.highlightLineNum != 0):
             self.highlightLineNum = nextLineNum
-        elif increment == 1 and (self.topLineNum + self.highlightLineNum + 1) != len(self.results) and self.highlightLineNum != len(self.results):
+        elif increment == 1 and (self.topLineNum + self.highlightLineNum + 1) != len(self.formattedResults) and self.highlightLineNum != len(self.formattedResults):
             self.highlightLineNum = nextLineNum
 
 

@@ -12,7 +12,7 @@ class Spoticon(object):
 
         self.commands = {
             ord('s'): self.search,
-            ord('\n'): self.play_highlighted_track,
+            ord('\n'): self.activate_selected_line,
             ord(' '): self.play_pause,
             ord('j'): self.move_up,
             ord('k'): self.move_down,
@@ -104,25 +104,42 @@ class Spoticon(object):
         self.stop_player_listener_thread()
         curses.endwin()
 
+    def update(self, results):
+        if (self.results):
+            self.backHistory.append(self.results)
+        self.results = results
+        self.searchScreen.draw_screen(self.results)
+
     def search(self):
         searchStr = self.get_input('Search: ')
 
         if (len(searchStr) > 2):
-            if (self.results):
-                self.backHistory.append(self.results)
-                self.topLineNum = 0
-                self.highlightLineNum = 0
-            self.results = self.spotifyModel.track_search(searchStr)
-            self.searchScreen.draw_screen(self.results)
+            results = self.spotifyModel.full_search(searchStr)
+            self.update(results)
+
+    def open_artist(self, line):
+        results = self.spotifyModel.get_artist(line)
+        self.update(results)
+
+    def open_album(self, line):
+        results = self.spotifyModel.get_album(line)
+        self.update(results)
 
     def play_track(self, track):
         self.nowPlaying = track
         self.spotifyPlayer.play_track(track)
         self.nowPlayingScreen.draw_screen(track)
 
-    def play_highlighted_track(self):
-        track = self.searchScreen.get_highlighted_track()
-        self.play_track(track)
+    def activate_selected_line(self):
+        line = self.searchScreen.get_highlighted_line()
+        if line['category'] == 'artist':
+            self.open_artist(line)
+        elif line['category'] == 'album':
+            self.open_album(line)
+        elif line['category'] == 'track':
+            self.play_track(line)
+        else:
+            pass
 
     def play_pause(self):
         self.spotifyPlayer.play_pause()
