@@ -1,10 +1,13 @@
 import curses
 import threading, time
+import os.path as path
+
 
 from playlist import Playlist
 from screens import Search_Screen, Now_Playing_Screen, Input_Screen
 from spotifyModel import Spotify_Model
 from spotifyPlayer import Spotify_Player
+from webserver import Web_Server
 
 class Spoticon(object):
 
@@ -27,7 +30,6 @@ class Spoticon(object):
         }
 
         self.playlist = Playlist()
-        self.spotifyModel = Spotify_Model()
         self.spotifyPlayer = Spotify_Player()
 
         #Default curses screen
@@ -63,17 +65,45 @@ class Spoticon(object):
         self.pauseCount = 0
         self.start_player_listener_thread()
 
+        #Parse spoticonrc file
+        self.config = self.parse_rc()
+
+        self.spotifyModel = Spotify_Model(auth=self.config['auth'])
+
         self.listen_for_commands()
 
     def listen_for_commands(self):
         while True:
             self.searchScreen.draw_screen(self.results)
             charInput = self.stdScreen.getch()
-            if charInput in self.commands :
+            if charInput in self.commands:
                 self.commands[charInput]()
             elif charInput == ord('q'):
                 self.quit()
                 break
+
+    def parse_rc(self):
+        defaultAuth = { 'username': None,
+                          'client_id': None,
+                          'client_secret': None,
+                          'redirect_uri': None }
+        config = { 'auth': defaultAuth }
+        try:
+            with open(path.expanduser("~/.spoticonrc")) as rc:
+                lines = rc.readlines()
+                for line in lines:
+                    words = line.split(' ')
+                    if words[0] == 'username':
+                        config['auth']['username'] = words[1].strip('\n')
+                    elif words[0] == 'client_id':
+                        config['auth']['client_id'] = words[1].strip('\n')
+                    elif words[0] == 'client_secret':
+                        config['auth']['client_secret'] = words[1].strip('\n')
+                    elif words[0] == 'redirect_uri':
+                        config['auth']['redirect_uri'] = words[1].strip('\n')
+        except IOError:
+            pass
+        return config
 
     def start_player_listener_thread(self):
         self.playerListenerThread.setDaemon(True)
