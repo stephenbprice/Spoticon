@@ -1,5 +1,6 @@
 import curses
 import pdb
+import math
 
 
 class Search_Screen(object):
@@ -20,9 +21,23 @@ class Search_Screen(object):
     def refresh(self):
         self.win.refresh()
 
+    def format_album_results(self, albums):
+        res = []
+        for album in albums:
+            for albumArtLine in range(30):
+                artLine = album.get('album_art')[albumArtLine] if len(album.get('album_art')) > albumArtLine else ''
+                res.append({
+                    'category': 'album_art',
+                    'art': artLine,
+                })
+            res.append(album)
+        return res
+
     def format_line(self, line):
         if line['category'] == 'track':
             return self.format_track(line)
+        elif line['category'] == 'album_art':
+            return self.format_album_art(line)
         elif line['category'] == 'album':
             return self.format_album(line)
         elif line['category'] == 'artist':
@@ -35,8 +50,11 @@ class Search_Screen(object):
     def format_track(self, track):
         return '{0:<5} {1:<45} {2:^25} {3:>25}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
 
-    def format_album(self, album):
-        return '{0:<103}'.format(album.get('album_name')[:30])
+    def format_album_art(self, line):
+        return '{0:<103}'.format(line.get('art')[:100])
+
+    def format_album(self, line):
+        return '{0:<103}'.format(line.get('album_name')[:100])
 
     def format_artist(self, artist):
         return '{0:<103}'.format(artist.get('artist_name')[:50])
@@ -61,7 +79,7 @@ class Search_Screen(object):
                 'title': 'ALBUMS',
                 'category': 'title_bar',
             })
-            self.formattedResults += self.results['albums']
+            self.formattedResults += self.format_album_results(self.results['albums'])
         if 'tracks' in self.results:
             self.formattedResults.append({
                 'title': 'TRACKS',
