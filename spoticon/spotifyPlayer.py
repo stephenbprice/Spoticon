@@ -17,7 +17,7 @@ class Spotify_Player(object):
         return byts.decode('utf-8').rstrip()
 
     def play_track(self, track):
-        self.send_script('tell application "Spotify" to play track "{0}"'.format(track.get('track_uri')))
+        self.send_script('tell application "Spotify" to play track "{0}"'.format(track['track_uri']))
 
     def play_pause(self):
         self.send_script('tell application "Spotify" to playpause')

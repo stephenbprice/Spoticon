@@ -1,6 +1,11 @@
 import curses
-import pdb
+import io
 import math
+import pdb
+import numpy
+import urllib.request as urllib
+
+from PIL import Image
 
 
 class Search_Screen(object):
@@ -15,23 +20,14 @@ class Search_Screen(object):
         self.formattedResults = []
         self.topLineNum = 0
         self.highlightLineNum = 0
+        self.albumArtBegin = -1
+        self.albumArtEnd = -1
+        self.albumNumber = 0
 
         self.win = self.stdscreen.derwin(self.height, self.width, begin_y, begin_x)
 
     def refresh(self):
         self.win.refresh()
-
-    def format_album_results(self, albums):
-        res = []
-        for album in albums:
-            for albumArtLine in range(30):
-                artLine = album.get('album_art')[albumArtLine] if len(album.get('album_art')) > albumArtLine else ''
-                res.append({
-                    'category': 'album_art',
-                    'art': artLine,
-                })
-            res.append(album)
-        return res
 
     def format_line(self, line):
         if line['category'] == 'track':
@@ -51,10 +47,16 @@ class Search_Screen(object):
         return '{0:<5} {1:<45} {2:^25} {3:>25}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
 
     def format_album_art(self, line):
-        return '{0:<103}'.format(line.get('art')[:100])
+        if albums in self.results and len(self.results['albums']) > 0:
+            album = self.results['albums'][self.albumNumber]
+            if not 'album_art' in album:
+                album['album_art'] = self.asciinator(album['album_art_uri']['url'], 29/album['album_art_uri']['width'], 8)
+            return '{0:<103}'.format(album['album_art'][line['line']][:100]) if len(album['album_art']) > line['line'] else '{0:<103}'.format('')
+        else:
+            return None
 
     def format_album(self, line):
-        return '{0:<103}'.format(line.get('album_name')[:100])
+        return '{0:<103}'.format(self.results['albums'][self.albumNumber]['album_name'][:100])
 
     def format_artist(self, artist):
         return '{0:<103}'.format(artist.get('artist_name')[:50])
@@ -65,22 +67,34 @@ class Search_Screen(object):
     def get_highlighted_line(self):
         return self.formattedResults[self.highlightLineNum]
 
+    def get_album(self):
+        return self.results['albums'][self.albumNumber] if albums in self.results and len(self.results['albums'] > 0) else None
+
     def format_results(self):
         self.formattedResults = []
 
-        if 'artists' in self.results:
+        if 'artists' in self.results and len(self.results['artists']) > 0:
             self.formattedResults.append({
                 'title': 'ARTISTS',
                 'category': 'title_bar',
             })
             self.formattedResults += self.results['artists']
-        if 'albums' in self.results:
+
+        if 'albums' in self.results and len(self.results['albums']) > 0:
             self.formattedResults.append({
                 'title': 'ALBUMS',
                 'category': 'title_bar',
             })
-            self.formattedResults += self.format_album_results(self.results['albums'])
-        if 'tracks' in self.results:
+            self.albumArtBegin = len(self.formattedResults) + 1
+            for x in range(25):
+                self.formattedResults.append({ 'line': x, 'category': 'album_art' })
+            self.albumArtEnd = len(self.formattedResults) 
+            self.formattedResults.append({ 'category': 'album' })
+        else:
+            self.albumArtBegin = -1
+            self.albumArtEnd = -1
+
+        if 'tracks' in self.results and len(self.results['tracks']) > 0:
             self.formattedResults.append({
                 'title': 'TRACKS',
                 'category': 'title_bar',
@@ -92,6 +106,7 @@ class Search_Screen(object):
             self.results = results
             self.format_results()
             self.topLineNum = 0
+            self.albumNumber = 0
             self.highlightLineNum = 0
 
         self.win.erase()
@@ -126,6 +141,38 @@ class Search_Screen(object):
             self.highlightLineNum = nextLineNum
         elif increment == 1 and (self.topLineNum + self.highlightLineNum + 1) != len(self.formattedResults) and self.highlightLineNum != len(self.formattedResults):
             self.highlightLineNum = nextLineNum
+
+    def leftright(self, increment):
+        if self.formattedResults and self.formattedResults[self.highlightLineNum]['category'] in ['album', 'album_art']:
+            nextAlbumNumber = self.albumNumber + increment
+            if nextAlbumNumber in range(len(self.results['albums'])):
+                self.albumNumber = nextAlbumNumber
+
+
+    # https://gist.github.com/cdiener/10491632
+    def asciinator(self, url, scaling, intensity):
+#       chars = numpy.asarray(list(' .,:;irsXA253hMHGS#9B&@'))
+        chars = numpy.asarray(list(u' ▗▖▄▝▐▞▟▘▚▌▙▀▜▛█'))
+        widthCorrection = 4.5
+
+        # Grab image url and open in PIL
+        f = io.BytesIO(urllib.urlopen(url).read())
+        img = Image.open(f)
+
+        # Crop image for better ascii conversion
+        width, height = img.size
+        left = round(width/8)
+        top = round(height/8)
+        right = round(7 * width/8)
+        bottom = round(7 * height/8)
+        newimg = img.crop( ( left, top, right, bottom ) )
+
+        # ASCII conversion magic
+        newsize = (round(newimg.size[0]*scaling*widthCorrection), round(newimg.size[1]*scaling))
+        newimg = numpy.sum(numpy.asarray(newimg.resize(newsize)), axis=2)
+        newimg -= newimg.min()
+        newimg = (1.0 - newimg/newimg.max())**intensity*(chars.size-1)
+        return [a for a in ( ("".join(r) for r in chars[newimg.astype(int)] ) )]
 
 
 class Now_Playing_Screen(object):

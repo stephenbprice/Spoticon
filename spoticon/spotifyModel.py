@@ -1,15 +1,11 @@
 import sys
-import io
 import spotipy
 import spotipy.oauth2 as oauth2
 import threading
 import subprocess
-import numpy
-import urllib.request as urllib
-from PIL import Image
-from functools import reduce
 
 from webserver import Web_Server
+from functools import reduce
 
 class Spotify_Model(object):
     
@@ -119,16 +115,11 @@ class Spotify_Model(object):
     def parse_albums(self,results):
         res = []
         for album in results:
-            if album['images'] and len(album['images']) > 0:
-                art_info = reduce(lambda f,s: f if f['height']<s['height'] else s, album['images'])
-                art_image = self.asciinator(art_info['url'], 28/art_info['height'], 6);
-            else:
-                art_image = None
             res.append({
                 'album_id': album['id'],
                 'album_name': album['name'],
                 'album_uri': album['uri'],
-                'album_art': art_image,
+                'album_art_uri': reduce(lambda f,s: f if f['height']>s['height'] else s, album['images']) if album['images'] and len(album['images']) > 0 else None,
                 'category': 'album',
             })
         return res
@@ -144,16 +135,4 @@ class Spotify_Model(object):
                 'category': 'artist',
             })
         return self.sort(res, 'popularity', reverse=True)
-
-    # https://gist.github.com/cdiener/10491632
-    def asciinator(self, url, scaling, intensity):
-        chars = numpy.asarray(list(' `-.\'_:,"=^;<+!*?/cL\zrs7TivJtC{3F)Il(xZfY5S2eajo14[nuyE]P6V9kXpKwGhqAUbOd8#HRDB0$mgMW&Q%N@'))
-        widthCorrection = 4
-        f = io.BytesIO(urllib.urlopen(url).read())
-        img = Image.open(f)
-        newsize = (round(img.size[0]*scaling*widthCorrection), round(img.size[1]*scaling))
-        img = numpy.sum(numpy.asarray(img.resize(newsize)), axis=2)
-        img -= img.min()
-        img = (1.0 - img/img.max())**intensity*(chars.size-1)
-        return [a for a in ( ("".join(r) for r in chars[img.astype(int)] ) )]
 

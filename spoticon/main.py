@@ -19,8 +19,10 @@ class Spoticon(object):
             ord(' '): self.play_pause,
             ord('j'): self.move_up,
             ord('k'): self.move_down,
-            ord('l'): self.forward_history,
-            ord('h'): self.back_history,
+            ord('h'): self.move_left,
+            ord('l'): self.move_right,
+            ord('f'): self.forward_history,
+            ord('b'): self.back_history,
             ord('r'): self.toggle_repeat_one_track,
             ord('L'): self.playlist_play_next,
             ord('H'): self.playlist_play_last,
@@ -164,8 +166,9 @@ class Spoticon(object):
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'artist':
             self.open_artist(line)
-        elif line['category'] == 'album':
-            self.open_album(line)
+        elif line['category'] in ['album', 'album_art']:
+            album = self.searchScreen.get_album()
+            self.open_album(album)
         elif line['category'] == 'track':
             self.play_track(line)
         else:
@@ -179,6 +182,12 @@ class Spoticon(object):
 
     def move_down(self):
         self.searchScreen.updown(-1)
+
+    def move_left(self):
+        self.searchScreen.leftright(-1)
+
+    def move_right(self):
+        self.searchScreen.leftright(1)
 
     def toggle_repeat_one_track(self):
         self.spotifyPlayer.toggle_repeat_one_track()
