@@ -208,12 +208,14 @@ class Spoticon(object):
         self.spotifyPlayer.toggle_repeat_one_track()
 
     def playlist_play_next(self):
-        track = self.playlist.next_track()
-        self.play_track(track)
+        if self.playlist.has_next_track():
+            track = self.playlist.next_track()
+            self.play_track(track)
 
     def playlist_play_last(self):
-        track = self.playlist.prev_track()
-        self.play_track(track)
+        if self.playlist.has_previous_track():
+            track = self.playlist.prev_track()
+            self.play_track(track)
 
     def playlist_clear_playlist(self):
         self.playlist.clear_playlist()
