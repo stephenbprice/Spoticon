@@ -38,6 +38,8 @@ class Search_Screen(object):
             return self.format_album(line)
         elif line['category'] == 'artist':
             return self.format_artist(line)
+        elif line['category'] == 'playlist':
+            return self.format_playlist(line)
         elif line['category'] == 'title_bar':
             return self.format_title_bar(line)
         else:
@@ -47,13 +49,16 @@ class Search_Screen(object):
         return '{0:<5} {1:<45} {2:^25} {3:>25}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
 
     def format_album_art(self, line):
-        if albums in self.results and len(self.results['albums']) > 0:
+        if 'albums' in self.results and len(self.results['albums']) > 0:
             album = self.results['albums'][self.albumNumber]
             if not 'album_art' in album:
                 album['album_art'] = self.asciinator(album['album_art_uri']['url'], 29/album['album_art_uri']['width'], 8)
             return '{0:<103}'.format(album['album_art'][line['line']][:100]) if len(album['album_art']) > line['line'] else '{0:<103}'.format('')
         else:
             return None
+
+    def format_playlist(self, line):
+        return '{0:<103}'.format(line.get('playlist_name'))
 
     def format_album(self, line):
         return '{0:<103}'.format(self.results['albums'][self.albumNumber]['album_name'][:100])
@@ -68,19 +73,26 @@ class Search_Screen(object):
         return self.formattedResults[self.highlightLineNum]
 
     def get_album(self):
-        return self.results['albums'][self.albumNumber] if albums in self.results and len(self.results['albums'] > 0) else None
+        return self.results['albums'][self.albumNumber] if 'albums' in self.results and len(self.results['albums']) > 0 else None
 
     def format_results(self):
         self.formattedResults = []
 
-        if 'artists' in self.results and len(self.results['artists']) > 0:
+        if 'playlists' in self.results:
+            self.formattedResults.append({
+                'title': 'PLAYLISTS',
+                'category': 'title_bar',
+            })
+            self.formattedResults += self.results['playlists']
+
+        if 'artists' in self.results:
             self.formattedResults.append({
                 'title': 'ARTISTS',
                 'category': 'title_bar',
             })
             self.formattedResults += self.results['artists']
 
-        if 'albums' in self.results and len(self.results['albums']) > 0:
+        if 'albums' in self.results:
             self.formattedResults.append({
                 'title': 'ALBUMS',
                 'category': 'title_bar',
@@ -94,7 +106,7 @@ class Search_Screen(object):
             self.albumArtBegin = -1
             self.albumArtEnd = -1
 
-        if 'tracks' in self.results and len(self.results['tracks']) > 0:
+        if 'tracks' in self.results:
             self.formattedResults.append({
                 'title': 'TRACKS',
                 'category': 'title_bar',

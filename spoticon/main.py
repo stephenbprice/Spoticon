@@ -29,6 +29,7 @@ class Spoticon(object):
             ord('C'): self.playlist_clear_playlist,
             ord('+'): self.playlist_add_highlighted_track,
             ord('A'): self.playlist_add_all_tracks,
+            ord('p'): self.open_my_playlists,
         }
 
         self.playlist = Playlist()
@@ -72,6 +73,8 @@ class Spoticon(object):
 
         self.spotifyModel = Spotify_Model(auth=self.config['auth'])
 
+        self.open_my_playlists()
+
         self.listen_for_commands()
 
     def listen_for_commands(self):
@@ -85,10 +88,12 @@ class Spoticon(object):
                 break
 
     def parse_rc(self):
-        defaultAuth = { 'username': None,
-                          'client_id': None,
-                          'client_secret': None,
-                          'redirect_uri': None }
+        defaultAuth = { 
+            'username': None,
+            'client_id': None,
+            'client_secret': None,
+            'redirect_uri': None 
+        }
         config = { 'auth': defaultAuth }
         try:
             with open(path.expanduser("~/.spoticonrc")) as rc:
@@ -157,6 +162,14 @@ class Spoticon(object):
         results = self.spotifyModel.get_album(line)
         self.update(results)
 
+    def open_my_playlists(self):
+        results = self.spotifyModel.get_my_playlists()
+        self.update(results)
+
+    def open_playlist(self, line):
+        results = self.spotifyModel.get_playlist(line)
+        self.update(results)
+
     def play_track(self, track):
         self.nowPlaying = track
         self.spotifyPlayer.play_track(track)
@@ -166,6 +179,8 @@ class Spoticon(object):
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'artist':
             self.open_artist(line)
+        elif line['category'] == 'playlist':
+            self.open_playlist(line)
         elif line['category'] in ['album', 'album_art']:
             album = self.searchScreen.get_album()
             self.open_album(album)
@@ -204,8 +219,9 @@ class Spoticon(object):
         self.playlist.clear_playlist()
 
     def playlist_add_highlighted_track(self):
-        track = self.searchScreen.get_highlighted_track()
-        self.playlist.add_track(track)
+        line = self.searchScreen.get_highlighted_line()
+        if line['category'] == 'track':
+            self.playlist.add_track(line)
 
     def playlist_add_all_tracks(self):
         self.playlist.add_tracks(self.results)
