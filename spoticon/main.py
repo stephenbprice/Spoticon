@@ -128,7 +128,7 @@ class Spoticon(object):
                     self.play_track(self.nowPlaying)
                 elif self.playlist.has_next_track():
                     if self.pauseCount >= 2:
-                        self.play_track(self.playlist.next_track)
+                        self.play_track(self.playlist.next_track())
                         self.pauseCount = 0
                     else:
                         self.pauseCount += 1
