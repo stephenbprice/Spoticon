@@ -13,7 +13,7 @@ setup(
 
     packages = ['spoticon'],
     include_package_data = True,
-    install_requires = ['spotipy', 'PIL', 'numpy'],
+    install_requires = ['spotipy', 'Pillow', 'numpy'],
     entry_points = {'console_scripts': ['spoticon=spoticon.main:run']},
     classifiers = [],
 )

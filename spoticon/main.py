@@ -2,8 +2,7 @@ import curses
 import threading, time
 import os.path as path
 
-
-from playlist import Playlist
+from playQueue import PlayQueue
 from screens import Search_Screen, Now_Playing_Screen, Input_Screen
 from spotifyModel import Spotify_Model
 from spotifyPlayer import Spotify_Player
@@ -24,15 +23,15 @@ class Spoticon(object):
             ord('f'): self.forward_history,
             ord('b'): self.back_history,
             ord('r'): self.toggle_repeat_one_track,
-            ord('L'): self.playlist_play_next,
-            ord('H'): self.playlist_play_last,
-            ord('C'): self.playlist_clear_playlist,
-            ord('+'): self.playlist_add_highlighted_track,
-            ord('A'): self.playlist_add_all_tracks,
+            ord('L'): self.playQueue_play_next,
+            ord('H'): self.playQueue_play_last,
+            ord('C'): self.playQueue_clear_playQueue,
+            ord('+'): self.playQueue_add_highlighted_track,
+            ord('A'): self.playQueue_add_all_tracks,
             ord('p'): self.open_my_playlists,
         }
 
-        self.playlist = Playlist()
+        self.playQueue = PlayQueue()
         self.spotifyPlayer = Spotify_Player()
 
         #Default curses screen
@@ -126,9 +125,9 @@ class Spoticon(object):
             if (playerState == 'paused' or playerState == 'stopped') and playerPosition == '0.0':
                 if self.nowPlaying and self.repeatOneSong:
                     self.play_track(self.nowPlaying)
-                elif self.playlist.has_next_track():
+                elif self.playQueue.has_next_track():
                     if self.pauseCount >= 2:
-                        self.play_track(self.playlist.next_track())
+                        self.play_track(self.playQueue.next_track())
                         self.pauseCount = 0
                     else:
                         self.pauseCount += 1
@@ -205,28 +204,28 @@ class Spoticon(object):
         self.searchScreen.leftright(1)
 
     def toggle_repeat_one_track(self):
-        self.spotifyPlayer.toggle_repeat_one_track()
+        self.repeatOneSong = not self.repeatOneSong
 
     def playlist_play_next(self):
-        if self.playlist.has_next_track():
-            track = self.playlist.next_track()
+        if self.playQueue.has_next_track():
+            track = self.playQueue.next_track()
             self.play_track(track)
 
     def playlist_play_last(self):
-        if self.playlist.has_previous_track():
-            track = self.playlist.prev_track()
+        if self.playQueue.has_previous_track():
+            track = self.playQueue.prev_track()
             self.play_track(track)
 
-    def playlist_clear_playlist(self):
-        self.playlist.clear_playlist()
+    def playlist_clear_playQueue(self):
+        self.playQueue.clear_playQueue()
 
     def playlist_add_highlighted_track(self):
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'track':
-            self.playlist.add_track(line)
+            self.playQueue.add_track(line)
 
     def playlist_add_all_tracks(self):
-        self.playlist.add_tracks(self.results)
+        self.playQueue.add_tracks(self.results)
 
     def get_input(self, prompt):
         inputScreen = Input_Screen(self.stdScreen, 3, 60, 20, 20)
