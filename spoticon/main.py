@@ -206,25 +206,25 @@ class Spoticon(object):
     def toggle_repeat_one_track(self):
         self.repeatOneSong = not self.repeatOneSong
 
-    def playlist_play_next(self):
+    def playQueue_play_next(self):
         if self.playQueue.has_next_track():
             track = self.playQueue.next_track()
             self.play_track(track)
 
-    def playlist_play_last(self):
+    def playQueue_play_last(self):
         if self.playQueue.has_previous_track():
             track = self.playQueue.prev_track()
             self.play_track(track)
 
-    def playlist_clear_playQueue(self):
+    def playQueue_clear_playQueue(self):
         self.playQueue.clear_playQueue()
 
-    def playlist_add_highlighted_track(self):
+    def playQueue_add_highlighted_track(self):
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'track':
             self.playQueue.add_track(line)
 
-    def playlist_add_all_tracks(self):
+    def playQueue_add_all_tracks(self):
         self.playQueue.add_tracks(self.results)
 
     def get_input(self, prompt):

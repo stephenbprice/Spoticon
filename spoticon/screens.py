@@ -52,7 +52,7 @@ class Search_Screen(object):
         if 'albums' in self.results and len(self.results['albums']) > 0:
             album = self.results['albums'][self.albumNumber]
             if not 'album_art' in album:
-                album['album_art'] = self.asciinator(album['album_art_uri']['url'], 29/album['album_art_uri']['width'], 8)
+                album['album_art'] = self.asciinator(album['album_art_uri']['url'], 100)
             return '{0:<103}'.format(album['album_art'][line['line']][:100]) if len(album['album_art']) > line['line'] else '{0:<103}'.format('')
         else:
             return None
@@ -161,31 +161,53 @@ class Search_Screen(object):
                 self.albumNumber = nextAlbumNumber
 
 
-    # https://gist.github.com/cdiener/10491632
-    def asciinator(self, url, scaling, intensity):
-#       chars = numpy.asarray(list(' .,:;irsXA253hMHGS#9B&@'))
-        chars = numpy.asarray(list(u' ▗▖▄▝▐▞▟▘▚▌▙▀▜▛█'))
-        widthCorrection = 4.5
+    # http://www.richard-h-clark.com/projects/block-art.html
+    def asciinator(self, url, width):
+        CHAR_SEQ = u'█▛▜▀▙▌▚▘▟▞▐▝▄▖▗ '
 
-        # Grab image url and open in PIL
-        f = io.BytesIO(urllib.urlopen(url).read())
-        img = Image.open(f)
+        # Open the image and convert it to black and white
+        FILE_NAME = io.BytesIO(urllib.urlopen(url).read())
+        orig_image = Image.open(FILE_NAME)
 
-        # Crop image for better ascii conversion
-        width, height = img.size
-        left = round(width/8)
-        top = round(height/8)
-        right = round(7 * width/8)
-        bottom = round(7 * height/8)
-        newimg = img.crop( ( left, top, right, bottom ) )
+        if orig_image.mode == 'RGBA':
+            # Remove transparancy
+            bg_image = Image.new("RGBA", 
+                                     orig_image.size, 
+                                     "white")
+            bg_image.paste(orig_image, (0,0), orig_image)
+            orig_image = bg_image
 
-        # ASCII conversion magic
-        newsize = (round(newimg.size[0]*scaling*widthCorrection), round(newimg.size[1]*scaling))
-        newimg = numpy.sum(numpy.asarray(newimg.resize(newsize)), axis=2)
-        newimg -= newimg.min()
-        newimg = (1.0 - newimg/newimg.max())**intensity*(chars.size-1)
-        return [a for a in ( ("".join(r) for r in chars[newimg.astype(int)] ) )]
+        if orig_image.mode != '1':
+            # Convert the image to black and white
+            # Converting to 'P' first results in better conversion
+            orig_image = orig_image.convert('P').convert('1')
 
+        # Resize the image so that the aspect ratio is correct 
+        # for the characters. Ensure that the dimensions are 
+        # multiples of two (two pixels per character).
+        new_width = int(math.ceil(width / 2.0) * 2) * 2
+        new_height = int(math.ceil(new_width / 4.0)) * 2
+        image = orig_image.resize((new_width, new_height), Image.ANTIALIAS)
+
+        # Get the pixel data
+        pix = image.load()
+
+        # The value above which pixels are considered white and 
+        # below which pixels are considered black.
+        THRESHOLD = 255
+
+        lines = []
+
+        # Itereate over all the pixels and generate the unicode 
+        # representation. Print it to stdout.
+        for y in range(0, new_height, 2):
+            s = ''
+            for x in range(0, new_width, 2):
+                char_index = int(pix[x, y] / THRESHOLD * 8) + int(pix[x+1, y] / THRESHOLD * 4) + int(pix[x, y+1] / THRESHOLD * 2) + int(pix[x+1, y+1] / THRESHOLD)
+                s += CHAR_SEQ[char_index]
+            lines.append(s)
+
+        return lines
 
 class Now_Playing_Screen(object):
 

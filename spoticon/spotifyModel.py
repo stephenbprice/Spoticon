@@ -154,7 +154,7 @@ class Spotify_Model(object):
 
     def parse_playlists(self, results):
         res = []
-        if 'items' in results:
+        if results and 'items' in results:
             for playlist in results['items']:
                 res.append({
                     'playlist_name': playlist['name'],
