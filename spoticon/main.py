@@ -225,7 +225,7 @@ class Spoticon(object):
             self.playQueue.add_track(line)
 
     def playQueue_add_all_tracks(self):
-        self.playQueue.add_tracks(self.results)
+        self.playQueue.add_tracks(self.results['tracks'])
 
     def get_input(self, prompt):
         inputScreen = Input_Screen(self.stdScreen, 3, 60, 20, 20)
