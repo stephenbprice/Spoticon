@@ -29,6 +29,7 @@ class Spoticon(object):
             ord('+'): self.playQueue_add_highlighted_track,
             ord('A'): self.playQueue_add_all_tracks,
             ord('p'): self.open_my_playlists,
+            ord('q'): self.display_playQueue,
         }
 
         self.playQueue = PlayQueue()
@@ -82,7 +83,7 @@ class Spoticon(object):
             charInput = self.stdScreen.getch()
             if charInput in self.commands:
                 self.commands[charInput]()
-            elif charInput == ord('q'):
+            elif charInput == 27:
                 self.quit()
                 break
 
@@ -227,6 +228,11 @@ class Spoticon(object):
     def playQueue_add_all_tracks(self):
         self.playQueue.add_tracks(self.results['tracks'])
 
+    def display_playQueue(self):
+        results = {}
+        results['tracks'] = self.playQueue.playQueue
+        self.update(results)
+
     def get_input(self, prompt):
         inputScreen = Input_Screen(self.stdScreen, 3, 60, 20, 20)
         usrInput = inputScreen.get_user_input(prompt)
@@ -241,14 +247,14 @@ class Spoticon(object):
         self.nowPlayingScreen.refresh()
 
     def forward_history(self):
-        if(self.forwardHistory):
+        if self.forwardHistory:
             self.backHistory.append(self.results)
             self.results = self.forwardHistory.pop()
             self.searchScreen.draw_screen(self.results)
 
 
     def back_history(self):
-        if (self.backHistory):
+        if self.backHistory:
             self.forwardHistory.append(self.results)
             self.results = self.backHistory.pop()
             self.searchScreen.draw_screen(self.results)
