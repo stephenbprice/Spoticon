@@ -46,28 +46,28 @@ class Search_Screen(object):
             return ''
 
     def format_track(self, track):
-        return '{0:<5} {1:<45} {2:^25} {3:>25}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
+        return '{0:<5} {1:<44} {2:^24} {3:>24}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
 
     def format_album_art(self, line):
         if 'albums' in self.results and len(self.results['albums']) > 0:
             album = self.results['albums'][self.albumNumber]
             if not 'album_art' in album:
                 album['album_art'] = self.asciinator(album['album_art_uri']['url'], 100)
-            return '{0:<103}'.format(album['album_art'][line['line']][:100]) if len(album['album_art']) > line['line'] else '{0:<103}'.format('')
+            return '{0:<100}'.format(album['album_art'][line['line']][:100]) if len(album['album_art']) > line['line'] else '{0:<100}'.format('')
         else:
             return None
 
     def format_playlist(self, line):
-        return '{0:<103}'.format(line.get('playlist_name'))
+        return '{0:<100}'.format(line.get('playlist_name'))
 
     def format_album(self, line):
-        return '{0:<103}'.format(self.results['albums'][self.albumNumber]['album_name'][:100])
+        return '{0:<100}'.format(self.results['albums'][self.albumNumber]['album_name'][:100])
 
     def format_artist(self, artist):
-        return '{0:<103}'.format(artist.get('artist_name')[:50])
+        return '{0:<100}'.format(artist.get('artist_name')[:50])
 
     def format_title_bar(self, title_bar):
-        return '{0:<103}'.format(title_bar.get('title'))
+        return '{0:<100}'.format(title_bar.get('title'))
 
     def get_highlighted_line(self):
         return self.formattedResults[self.highlightLineNum]
