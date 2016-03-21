@@ -1,3 +1,4 @@
+import sys
 import curses
 import threading, time
 import os.path as path
@@ -30,52 +31,66 @@ class Spoticon(object):
             ord('A'): self.playQueue_add_all_tracks,
             ord('p'): self.open_my_playlists,
             ord('q'): self.display_playQueue,
+            curses.KEY_RESIZE: self.curses_screen_setup,
         }
 
+        # Internal playlist
         self.playQueue = PlayQueue()
+
+        # Spotify player controller 
         self.spotifyPlayer = Spotify_Player()
 
-        #Default curses screen
+        # Curses screens
         self.stdScreen = stdScreen
+        self.searchScreen = None
+        self.nowPlayingScreen = None
+        self.stdScreenHeight = None
+        self.stdScreenWidth= None
+        self.searchScreenHeight = None
+        self.nowPlayingScreenHeight = None
+        self.curses_screen_setup()
 
-        #Initial curses setup
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(0)
-        self.stdScreen.keypad(1)
-
-        #Variables for windows
-        self.stdScreenHeight, self.stdScreenWidth = self.stdScreen.getmaxyx()
-        self.nowPlayingScreenHeight = 6
-        self.searchScreenHeight = self.stdScreenHeight - self.nowPlayingScreenHeight
-
-        #Subscreens
-        self.searchScreen = Search_Screen(self.stdScreen, self.searchScreenHeight, self.stdScreenWidth, 0, 0)
-        self.nowPlayingScreen = Now_Playing_Screen(self.stdScreen, self.nowPlayingScreenHeight, self.stdScreenWidth, self.searchScreenHeight, 0)
-
-        #Variables for Player Features
+        # Variables for player features
         self.nowPlaying = None
         self.repeatOneSong = False
 
-        #Variables for back/forward navigation
+        # Variables for back/forward navigation
         self.results = []
         self.backHistory = []
         self.forwardHistory = []
 
-        #Thread to listen for track change
+        # Thread to listen for track change
         self.playerListenerThread = threading.Thread(target=self.listen_for_track_advance)
         self.closePlayerListener = False
         self.pauseCount = 0
         self.start_player_listener_thread()
 
-        #Parse spoticonrc file
+        # Parse spoticonrc file
         self.config = self.parse_rc()
 
         self.spotifyModel = Spotify_Model(auth=self.config['auth'])
 
-        self.open_my_playlists()
 
+        self.curses_screen_setup();
         self.listen_for_commands()
+
+    def curses_screen_setup(self):
+        # Initial curses setup
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+        self.stdScreen.keypad(1)
+
+        self.stdScreenHeight, self.stdScreenWidth = self.stdScreen.getmaxyx()
+        
+        if self.stdScreenHeight < 20 or self.stdScreenWidth < 100:
+            self.quit('Spoticon cannot run with a screen resolution of 100x20. Please resize the window and restart Spoticon.');
+        else:
+            self.nowPlayingScreenHeight = 6
+            self.searchScreenHeight = self.stdScreenHeight - self.nowPlayingScreenHeight
+
+            self.searchScreen = Search_Screen(self.stdScreen, self.searchScreenHeight, self.stdScreenWidth, 0, 0)
+            self.nowPlayingScreen = Now_Playing_Screen(self.stdScreen, self.nowPlayingScreenHeight, self.stdScreenWidth, self.searchScreenHeight, 0)
 
     def listen_for_commands(self):
         while True:
@@ -136,10 +151,12 @@ class Spoticon(object):
                 self.pauseCount = 0
             time.sleep(.5)
 
-    def quit(self):
-        print('quitting')
+    def quit(self, message=''):
         self.stop_player_listener_thread()
         curses.endwin()
+        print('quitting')
+        if message: print(message)
+        sys.exit()
 
     def update(self, results):
         if (self.results):
