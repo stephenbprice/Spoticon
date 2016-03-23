@@ -17,14 +17,26 @@ class Spotify_Player(object):
         return byts.decode('utf-8').rstrip()
 
     def play_track(self, track):
-        self.send_script('tell application "Spotify" to play track "{0}"'.format(track['track_uri']))
+        try:
+            self.send_script('tell application "Spotify" to play track "{0}"'.format(track['track_uri']))
+        except:
+            pass
 
     def play_pause(self):
-        self.send_script('tell application "Spotify" to playpause')
+        try:
+            self.send_script('tell application "Spotify" to playpause')
+        except:
+            pass
 
     def get_player_state(self):
-        return self.send_script('tell application "Spotify" \n get player state \n end tell', True)
+        try:
+            return self.send_script('tell application "Spotify" \n get player state \n end tell', True)
+        except:
+            pass
 
     def get_player_position(self):
-        return self.send_script('tell application "Spotify" \n get player position \n end tell', True)
+        try:
+            return self.send_script('tell application "Spotify" \n get player position \n end tell', True)
+        except:
+            pass
 
