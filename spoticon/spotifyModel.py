@@ -56,29 +56,35 @@ class Spotify_Model(object):
         webserver = Web_Server()
         self.url = webserver.run()
 
+    def search(self, method, *args, **kwargs):
+        self.access_token = self.get_access_token()
+        if self.access_token:
+            self.spotify._auth = self.access_token
+        return method(*args, **kwargs)
+
     def sort(self, results, sort_field, reverse=False):
         return sorted(results, key = lambda k: k[sort_field], reverse = reverse)
 
     def track_search(self, searchStr, limit=50):
-        tracks = self.spotify.search(searchStr, limit, type='track')
+        tracks = self.search(self.spotify.search, searchStr, limit, type='track')
         return {
             'tracks': self.parse_tracks(tracks['tracks']['items'], source='search')
         }
 
     def album_search(self, searchStr, limit=10):
-        albums = self.spotify.search(searchStr, limit, type='album')
+        albums = self.search(self.spotify.search, searchStr, limit, type='album')
         return {
             'albums': self.parse_albums(albums['albums']['items'])
         }
 
     def artist_search(self, searchStr, limit=5):
-        artists = self.spotify.search(searchStr, limit=5, type='artist')
+        artists = self.search(self.spotify.search, searchStr, limit=5, type='artist')
         return {
             'artists': self.parse_artists(artists['artists']['items'])
         }
 
     def get_my_playlists(self):
-        playlists = self.spotify.user_playlists(self.username) if self.accessToken else None
+        playlists = self.search(self.spotify.user_playlists, self.username) if self.accessToken else None
         return {
             'playlists': self.parse_playlists(playlists)
         }
@@ -91,21 +97,21 @@ class Spotify_Model(object):
         }
     
     def get_artist(self, artist):
-        albums = self.spotify.artist_albums(artist['artist_id'])
-        tracks = self.spotify.artist_top_tracks(artist['artist_id'])
+        albums = self.search(self.spotify.artist_albums, artist['artist_id'])
+        tracks = self.search(self.spotify.artist_top_tracks, artist['artist_id'])
         return {
             'albums': self.parse_albums(albums['items']),
             'tracks': self.parse_tracks(tracks['tracks'])
         }
 
     def get_album(self, album):
-        tracks = self.spotify.album(album['album_id'])
+        tracks = self.search(self.spotify.album, album['album_id'])
         return {
             'tracks': self.parse_tracks(tracks['tracks']['items'], source='album', album=album['album_name'])
         }
 
     def get_playlist(self, playlist):
-        tracks = self.spotify.user_playlist(playlist['owner_id'], playlist['playlist_id'])
+        tracks = self.search(self.spotify.user_playlist, playlist['owner_id'], playlist['playlist_id'])
         return {
             'tracks': self.parse_playlist(tracks['tracks']['items'])
         }
