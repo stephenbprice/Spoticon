@@ -1,4 +1,5 @@
 import os
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 class testHTTPServer_RequestHandler(BaseHTTPRequestHandler):
@@ -34,7 +35,7 @@ class Web_Server(object):
         while not self.stopped:
             self.httpd.handle_request()
             while not os.path.exists("./url.txt"):
-                sleep(.5)
+                time.sleep(.5)
             with open("./url.txt", "r") as urlfile:
                 url = urlfile.read()
             os.remove("./url.txt")

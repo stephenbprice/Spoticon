@@ -3,6 +3,7 @@ import io
 import math
 import pdb
 import numpy
+import time
 import urllib.request as urllib
 
 from PIL import Image
@@ -172,8 +173,8 @@ class Search_Screen(object):
     def draw_screen(self, results):
         """ Draw the results on screen 
 
-        Args:
-            results(obj) = Formatted results of Spotify API query
+            Args:
+                results(obj) = Formatted results of Spotify API query
         """
 
         if results != self.results:
@@ -235,9 +236,9 @@ class Search_Screen(object):
     def asciinator(self, url, width):
         """ Return unicode representation of an image 
 
-        Args:
-            url (str) = A valid url for an image
-            width (int) = The char width for the unicode image
+            Args:
+                url (str) = A valid url for an image
+                width (int) = The char width for the unicode image
         """
 
         CHAR_SEQ = u'█▛▜▀▙▌▚▘▟▞▐▝▄▖▗ '
@@ -291,12 +292,12 @@ class Now_Playing_Screen(object):
     def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
         """ A curses sub-screen for displaying the track currently playing
 
-        Args:
-            stdscreen (obj) = The main curses object for the program
-            lines (int) = The line height for this screen
-            columns (int) = The char width for this screen
-            begin_y (int) = The number of lines from main screen top to begin screen
-            begin_x (int) = The number of chars from main screen left to begin screen
+            Args:
+                stdscreen (obj) = The main curses object for the program
+                lines (int) = The line height for this screen
+                columns (int) = The char width for this screen
+                begin_y (int) = The number of lines from main screen top to begin screen
+                begin_x (int) = The number of chars from main screen left to begin screen
         """
         
         self.stdscreen = stdscreen
@@ -326,6 +327,45 @@ class Input_Screen(object):
     def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
         """ A curses sub-screen for allowing and capturing user input
 
+            Args:
+                stdscreen (obj) = The main curses object for the program
+                lines (int) = The line height for this screen
+                columns (int) = The char width for this screen
+                begin_y (int) = The number of lines from main screen top to begin screen
+                begin_x (int) = The number of chars from main screen left to begin screen
+        """
+
+        self.stdscreen = stdscreen
+        self.height = lines
+        self.width = columns
+
+        self.win = self.stdscreen.derwin(self.height, self.width, begin_y, begin_x)
+        self.win.clear()
+        self.win.border(1)
+
+    def get_user_input(self, displayMsg):
+        """ Draw screen with displayMsg and return inputted text on enter key-press
+
+            Args:
+                displayMsg (str) = The message to display
+        """
+
+        self.win.addstr(1, 5, displayMsg)
+        curses.curs_set(1)
+        curses.echo()
+        usrInput = self.win.getstr().decode(encoding='utf-8')
+        curses.noecho()
+        curses.curs_set(0)
+        self.win.clear()
+        del self.win
+
+        return usrInput
+
+class Message_Screen(object):
+    
+    def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
+        """ A curses sub-screen for displaying messages
+
         Args:
             stdscreen (obj) = The main curses object for the program
             lines (int) = The line height for this screen
@@ -339,19 +379,18 @@ class Input_Screen(object):
         self.width = columns
 
         self.win = self.stdscreen.derwin(self.height, self.width, begin_y, begin_x)
+        self.win.clear()
         self.win.border(1)
 
-    def get_user_input(self, displayMsg):
-        """ Draw screen with displayMsg and return inputted text on enter key-press """
+    def flash_message(self, displayMsg, dur):
+        """ Flash message in message screen
 
-        self.win.addstr(1, 5, displayMsg)
-        curses.curs_set(1)
-        curses.echo()
-        usrInput = self.win.getstr().decode(encoding='utf-8')
-        curses.noecho()
-        curses.curs_set(0)
-        self.win.clear()
-        del self.win
-
-        return usrInput
+            Args:
+                displayMsg (str) = The message to display
+                dur (float) = The duration of the message
+        """
+        startStr = (int(self.width / 2) - int(len(displayMsg) / 2)) if len(displayMsg) < self.width else 0
+        self.win.addstr(1, startStr, displayMsg[:self.width])
+        self.win.refresh()
+        time.sleep(dur)
 

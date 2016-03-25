@@ -171,16 +171,16 @@ class Spotify_Model(object):
             'tracks': self.parse_tracks(tracks['tracks'])
         }
 
-    def get_album(self, album):
+    def get_album(self, album_id, album_name=''):
         """ Return tracks for album
 
             Args:
-                artist (str) = The album object to get tracks for 
+                album_id (str) = The spotify album_id to get tracks for
         """
 
-        tracks = self.search(self.spotify.album, album['album_id'])
+        tracks = self.search(self.spotify.album, album_id)
         return {
-            'tracks': self.parse_tracks(tracks['tracks']['items'], source='album', album=album['album_name'])
+            'tracks': self.parse_tracks(tracks['tracks']['items'], source='album', album=album_name, album_id=album_id)
         }
 
     def get_playlist(self, playlist_id):
@@ -195,7 +195,7 @@ class Spotify_Model(object):
             'tracks': self.parse_playlist(tracks['tracks']['items'])
         }
 
-    def parse_tracks(self, results, artist=None, album=None, source=None):
+    def parse_tracks(self, results, artist=None, album=None, album_id=None, source=None):
         """ Return track results in a better format
 
             Args:
@@ -213,7 +213,9 @@ class Spotify_Model(object):
                 'track_name': track['name'],
                 'track_number': track['track_number'],
                 'album_name': album or track['album']['name'],
+                'album_id': album_id or track['album']['id'],
                 'artist_name': artist or track['artists'][0]['name'],
+                'artist_id': track['artists'][0]['id'],
                 'track_uri': track['uri'],
                 'category': 'track',
             }

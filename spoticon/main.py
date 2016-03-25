@@ -4,7 +4,7 @@ import threading, time
 import os.path as path
 
 from playQueue import PlayQueue
-from screens import Search_Screen, Now_Playing_Screen, Input_Screen
+from screens import Search_Screen, Now_Playing_Screen, Input_Screen, Message_Screen
 from spotifyModel import Spotify_Model
 from spotifyPlayer import Spotify_Player
 from webserver import Web_Server
@@ -22,6 +22,8 @@ class Spoticon(object):
             ord('k'): self.move_down,
             ord('h'): self.move_left,
             ord('l'): self.move_right,
+            ord('a'): self.get_track_album,
+            ord('A'): self.get_track_artist,
             ord('f'): self.forward_history,
             ord('b'): self.back_history,
             ord('r'): self.toggle_repeat_one_track,
@@ -29,9 +31,9 @@ class Spoticon(object):
             ord('H'): self.playQueue_play_last,
             ord('C'): self.playQueue_clear_playQueue,
             ord('+'): self.playQueue_add_highlighted_track,
-            ord('A'): self.playQueue_add_all_tracks,
-            ord('p'): self.open_my_playlists,
+            ord('.'): self.playQueue_add_all_tracks,
             ord('q'): self.display_playQueue,
+            ord('p'): self.open_my_playlists,
             curses.KEY_RESIZE: self.curses_screen_setup,
         }
 
@@ -49,6 +51,14 @@ class Spoticon(object):
         self.stdScreenWidth= None
         self.searchScreenHeight = None
         self.nowPlayingScreenHeight = None
+        self.inputScreenHeight = 3
+        self.inputScreenWidth = None
+        self.inputScreenX = None
+        self.inputScreenY = None
+        self.messageScreenHeight = 3
+        self.messageScreenWidth = None
+        self.messageScreenX = None
+        self.messageScreenY = None
         self.curses_screen_setup()
 
         # Variables for player features
@@ -93,6 +103,11 @@ class Spoticon(object):
 
             self.searchScreen = Search_Screen(self.stdScreen, self.searchScreenHeight, self.stdScreenWidth, 0, 0)
             self.nowPlayingScreen = Now_Playing_Screen(self.stdScreen, self.nowPlayingScreenHeight, self.stdScreenWidth, self.searchScreenHeight, 0)
+
+            self.inputScreenWidth = self.messageScreenWidth = int(self.stdScreenWidth / 2)
+            self.inputScreenX = self.messageScreenX = int(self.stdScreenWidth / 4)
+            self.inputScreenY = int(self.stdScreenHeight / 2) - 1
+            self.messageScreenY = int (self.stdScreenHeight * .66)
 
     def listen_for_commands(self):
         """ Listen and interpret user commands """
@@ -204,15 +219,30 @@ class Spoticon(object):
             results = self.spotifyModel.get_artist(artist['artist_id'])
             self.update(results)
 
-    def open_album(self, album):
+    def get_track_album(self):
+        """ Open album of track """
+
+        line = self.searchScreen.get_highlighted_line()
+        self.open_album(line)
+
+    def get_track_artist(self):
+        """ Open artist results for track artist """
+        line - self.searchScreen.get_highlighted_line()
+
+
+    def open_album(self, item):
         """ Get and update results with tracks from album
 
             Args:
-                album (obj) = An album object
+                item (obj) = An spotify result object
         """
 
-        results = self.spotifyModel.get_album(album)
-        self.update(results)
+        if 'album_id' in item:
+            name = item['album_name'] if 'album_name' in item else ''
+            results = self.spotifyModel.get_album(item['album_id'], album_name=name)
+            self.update(results)
+        else:
+            self.flash_message('Cannot open album', 0.5)
 
     def open_my_playlists(self):
         """ Search for user playlists and update results """
@@ -263,6 +293,7 @@ class Spoticon(object):
         """ Toggle Spotify Player play/pause """
 
         self.spotifyPlayer.play_pause()
+        self.flash_message('Play/Pause Spotify Player', 0.5)
 
     def move_up(self):
         """ Move highlighted screen line up """
@@ -334,10 +365,21 @@ class Spoticon(object):
                 prompt (str) = The prompt string to display
         """
 
-        inputScreen = Input_Screen(self.stdScreen, 3, 60, 20, 20)
+        inputScreen = Input_Screen(self.stdScreen, self.inputScreenHeight, self.inputScreenWidth, self.inputScreenY, self.inputScreenX)
         usrInput = inputScreen.get_user_input(prompt)
         self.searchScreen.refresh()
         return usrInput
+
+    def flash_message(self, message, time):
+        """ Display message in message screen
+
+            Args:
+                message (str) = Message to display
+                time (float) = The time interval to display message
+        """
+
+        messageScreen = Message_Screen(self.stdScreen, self.messageScreenHeight, self.messageScreenWidth, self.messageScreenY, self.messageScreenX)
+        messageScreen.flash_message(message, time)
 
     def set_now_playing_scr(self):
         """ Set text and styize the now playing screen """
