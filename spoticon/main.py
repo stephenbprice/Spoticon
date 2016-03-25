@@ -12,6 +12,7 @@ from webserver import Web_Server
 class Spoticon(object):
 
     def __init__(self, stdScreen):
+        """ Controller for Spoticon program """
 
         self.commands = {
             ord('s'): self.search,
@@ -68,14 +69,15 @@ class Spoticon(object):
         # Parse spoticonrc file
         self.config = self.parse_rc()
 
+        # Spotipy controller
         self.spotifyModel = Spotify_Model(auth=self.config['auth'])
-
 
         self.curses_screen_setup();
         self.listen_for_commands()
 
     def curses_screen_setup(self):
-        # Initial curses setup
+        """ Set up curses screens on init and resize """
+
         curses.noecho()
         curses.cbreak()
         curses.curs_set(0)
@@ -93,6 +95,8 @@ class Spoticon(object):
             self.nowPlayingScreen = Now_Playing_Screen(self.stdScreen, self.nowPlayingScreenHeight, self.stdScreenWidth, self.searchScreenHeight, 0)
 
     def listen_for_commands(self):
+        """ Listen and interpret user commands """
+
         while True:
             self.searchScreen.draw_screen(self.results)
             charInput = self.stdScreen.getch()
@@ -103,6 +107,8 @@ class Spoticon(object):
                 break
 
     def parse_rc(self):
+        """ Return parsed .spoticonrc file if one exists """
+
         defaultAuth = { 
             'username': None,
             'client_id': None,
@@ -128,13 +134,19 @@ class Spoticon(object):
         return config
 
     def start_player_listener_thread(self):
+        """ Start thread listening to Spotify Player state """
+      
         self.playerListenerThread.setDaemon(True)
         self.playerListenerThread.start()
 
     def stop_player_listener_thread(self):
+        """ Stop thread listening to Spotify Player state """
+
         self.closePlayerListener = True
 
     def listen_for_track_advance(self):
+        """ Listen for Spotify Player state """
+
         while not self.closePlayerListener:
             playerState = self.spotifyPlayer.get_player_state()
             playerPosition = self.spotifyPlayer.get_player_position()
@@ -152,6 +164,8 @@ class Spoticon(object):
             time.sleep(.5)
 
     def quit(self, message=''):
+        """ Gracefully quit program """
+
         self.stop_player_listener_thread()
         curses.endwin()
         print('quitting')
@@ -159,40 +173,79 @@ class Spoticon(object):
         sys.exit()
 
     def update(self, results):
-        if (self.results):
+        """ Add curent results to backHistory replace with new results
+
+            Args:
+                results (obj) = The new results to display
+        """
+
+        if self.results:
             self.backHistory.append(self.results)
         self.results = results
         self.searchScreen.draw_screen(self.results)
 
     def search(self):
+        """ Get user input from search screen, query Spotify API, and update results """
+
         searchStr = self.get_input('Search: ')
 
-        if (len(searchStr) > 2):
+        if len(searchStr) > 2:
             results = self.spotifyModel.full_search(searchStr)
             self.update(results)
 
-    def open_artist(self, line):
-        results = self.spotifyModel.get_artist(line)
-        self.update(results)
+    def open_artist(self, artist):
+        """ Get and update results with tracks/albums from artist
 
-    def open_album(self, line):
-        results = self.spotifyModel.get_album(line)
+            Args:
+                artist (obj) = An artist object
+        """
+
+        if 'artist_id' in artist:
+            results = self.spotifyModel.get_artist(artist['artist_id'])
+            self.update(results)
+
+    def open_album(self, album):
+        """ Get and update results with tracks from album
+
+            Args:
+                album (obj) = An album object
+        """
+
+        results = self.spotifyModel.get_album(album)
         self.update(results)
 
     def open_my_playlists(self):
+        """ Search for user playlists and update results """
+
         results = self.spotifyModel.get_my_playlists()
         self.update(results)
 
-    def open_playlist(self, line):
-        results = self.spotifyModel.get_playlist(line)
-        self.update(results)
+    def open_playlist(self, playlist):
+        """ Get and update results with tracks from playlist
+
+            Args:
+                playlist (obj) = The highlighted line
+        """
+
+        if 'playlist_id' in playlist:
+            results = self.spotifyModel.get_playlist(playlist['playlist_id'])
+            self.update(results)
 
     def play_track(self, track):
-        self.nowPlaying = track
-        self.spotifyPlayer.play_track(track)
-        self.nowPlayingScreen.draw_screen(track)
+        """ Play track
+
+            Args:
+                track (obj) = The track to play
+        """
+
+        if 'track_uri' in track:
+            self.nowPlaying = track
+            self.spotifyPlayer.play_track(track['track_uri'])
+            self.nowPlayingScreen.draw_screen(track)
 
     def activate_selected_line(self):
+        """ Activate current highlighted line """
+
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'artist':
             self.open_artist(line)
@@ -207,56 +260,88 @@ class Spoticon(object):
             pass
 
     def play_pause(self):
+        """ Toggle Spotify Player play/pause """
+
         self.spotifyPlayer.play_pause()
 
     def move_up(self):
+        """ Move highlighted screen line up """
+
         self.searchScreen.updown(1)
 
     def move_down(self):
+        """ Move highlighted screen line down """
+
         self.searchScreen.updown(-1)
 
     def move_left(self):
+        """ Move highlighted screen line left """
+
         self.searchScreen.leftright(-1)
 
     def move_right(self):
+        """ Move highlighted screen line right """
+
         self.searchScreen.leftright(1)
 
     def toggle_repeat_one_track(self):
+        """ Toggle switch to repeat the same one song endlessly """
+
         self.repeatOneSong = not self.repeatOneSong
 
     def playQueue_play_next(self):
+        """ Play next song in the Spoticon queue """
+
         if self.playQueue.has_next_track():
             track = self.playQueue.next_track()
             self.play_track(track)
 
     def playQueue_play_last(self):
+        """ Play previous song in the Spoticon queue """
+
         if self.playQueue.has_previous_track():
             track = self.playQueue.prev_track()
             self.play_track(track)
 
     def playQueue_clear_playQueue(self):
+        """ Remove all tracks form the Spoticon queue """
+
         self.playQueue.clear_playQueue()
 
     def playQueue_add_highlighted_track(self):
+        """ Add current line item track to the Spoticon queue """
+
         line = self.searchScreen.get_highlighted_line()
         if line['category'] == 'track':
             self.playQueue.add_track(line)
 
     def playQueue_add_all_tracks(self):
+        """ Add all tracks on screen to the Spoticon queue """
+
         self.playQueue.add_tracks(self.results['tracks'])
 
     def display_playQueue(self):
+        """ Show tracks in Spoticon queue on screen """
+
         results = {}
         results['tracks'] = self.playQueue.playQueue
         self.update(results)
 
     def get_input(self, prompt):
+        """ Display input screen with prompt message and return user input
+
+            Args:
+                prompt (str) = The prompt string to display
+        """
+
         inputScreen = Input_Screen(self.stdScreen, 3, 60, 20, 20)
         usrInput = inputScreen.get_user_input(prompt)
         self.searchScreen.refresh()
         return usrInput
 
     def set_now_playing_scr(self):
+        """ Set text and styize the now playing screen """
+
         nowPlayingString = self.spotifyPlayer.get_now_playing_str()
         self.nowPlayingScreen.clear()
         self.nowPlayingScreen.border(1)
@@ -264,6 +349,8 @@ class Spoticon(object):
         self.nowPlayingScreen.refresh()
 
     def forward_history(self):
+        """ Display next step in forward history on main screen """
+
         if self.forwardHistory:
             self.backHistory.append(self.results)
             self.results = self.forwardHistory.pop()
@@ -271,6 +358,8 @@ class Spoticon(object):
 
 
     def back_history(self):
+        """ Display previous screen on main screen """
+
         if self.backHistory:
             self.forwardHistory.append(self.results)
             self.results = self.backHistory.pop()
@@ -278,4 +367,6 @@ class Spoticon(object):
 
 
 def run():
+    """ Call Spoticon class with automatically passed curses object """
+
     curses.wrapper(Spoticon)

@@ -11,6 +11,16 @@ from PIL import Image
 class Search_Screen(object):
 
     def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
+        """ A curses sub-screen for displaying the results of a query
+
+            Args:
+                stdscreen (obj) = The main curses object for the program
+                lines (int) = The line height for this screen
+                columns (int) = The char width for this screen
+                begin_y (int) = The number of lines from main screen top to begin screen
+                begin_x (int) = The number of chars from main screen left to begin screen
+        """
+
         self.stdscreen = stdscreen
         self.height = lines
         self.width = columns
@@ -27,15 +37,23 @@ class Search_Screen(object):
         self.win = self.stdscreen.derwin(self.height, self.width, begin_y, begin_x)
 
     def refresh(self):
+        """ Redraw window """
+
         self.win.refresh()
 
     def format_line(self, line):
+        """ Return string representation of an object from formattedResults
+
+            Args:
+                line (obj) = The formattedResults object to be stringified
+        """
+
         if line['category'] == 'track':
             return self.format_track(line)
         elif line['category'] == 'album_art':
             return self.format_album_art(line)
         elif line['category'] == 'album':
-            return self.format_album(line)
+            return self.format_album()
         elif line['category'] == 'artist':
             return self.format_artist(line)
         elif line['category'] == 'playlist':
@@ -46,9 +64,21 @@ class Search_Screen(object):
             return ''
 
     def format_track(self, track):
+        """ Return string represenetation of a track object
+
+            Args:
+                track (obj) = The track object to be stringified
+        """
+
         return '{0:<5} {1:<44} {2:^24} {3:>24}'.format(track.get('track_number'), track.get('track_name')[:30], track.get('album_name')[:20], track.get('artist_name')[:20])
 
     def format_album_art(self, line):
+        """ Return string representation of the active album art line represented by the line object
+            
+            Args:
+                line (obj) = The formattedResults representation of an album art line
+        """
+
         if 'albums' in self.results and len(self.results['albums']) > 0:
             album = self.results['albums'][self.albumNumber]
             if not 'album_art' in album:
@@ -57,25 +87,51 @@ class Search_Screen(object):
         else:
             return None
 
-    def format_playlist(self, line):
-        return '{0:<100}'.format(line.get('playlist_name'))
+    def format_playlist(self, playlist):
+        """ Return string representation of the playlist object
 
-    def format_album(self, line):
+            Args:
+                playlist (obj) = The playlist object to be stringified
+        """
+
+        return '{0:<100}'.format(playlist.get('playlist_name'))
+
+    def format_album(self):
+        """ Return string representation of the active album """
+
         return '{0:<100}'.format(self.results['albums'][self.albumNumber]['album_name'][:100])
 
     def format_artist(self, artist):
+        """ Return string represntation of artist object
+
+            Args:
+                artist (obj) = The artist object to be stringified
+        """
+
         return '{0:<100}'.format(artist.get('artist_name')[:50])
 
     def format_title_bar(self, title_bar):
+        """ Return string representation of title_bar object
+
+            Args:
+                title_bar (obj) = The title object to be stringified
+        """
+
         return '{0:<100}'.format(title_bar.get('title'))
 
     def get_highlighted_line(self):
+        """ Return the object represented by the highlighted line """
+
         return self.formattedResults[self.highlightLineNum]
 
     def get_album(self):
+        """ Return the active album that will be displayed """
+
         return self.results['albums'][self.albumNumber] if 'albums' in self.results and len(self.results['albums']) > 0 else None
 
     def format_results(self):
+        """ Order search results into array """
+
         self.formattedResults = []
 
         if 'playlists' in self.results:
@@ -114,6 +170,12 @@ class Search_Screen(object):
             self.formattedResults += self.results['tracks']
 
     def draw_screen(self, results):
+        """ Draw the results on screen 
+
+        Args:
+            results(obj) = Formatted results of Spotify API query
+        """
+
         if results != self.results:
             self.results = results
             self.format_results()
@@ -138,6 +200,12 @@ class Search_Screen(object):
         self.win.refresh()
 
     def updown(self, increment):
+        """ Move highlighted line up and down
+
+            Args:
+                increment (int) = The number of lines to move the highlight bar
+        """
+
         nextLineNum = self.highlightLineNum + increment
 
         #Paging
@@ -155,6 +223,8 @@ class Search_Screen(object):
             self.highlightLineNum = nextLineNum
 
     def leftright(self, increment):
+        """ Move highlighted line left and right. Used for album art """
+
         if self.formattedResults and self.formattedResults[self.highlightLineNum]['category'] in ['album', 'album_art']:
             nextAlbumNumber = self.albumNumber + increment
             if nextAlbumNumber in range(len(self.results['albums'])):
@@ -163,6 +233,13 @@ class Search_Screen(object):
 
     # http://www.richard-h-clark.com/projects/block-art.html
     def asciinator(self, url, width):
+        """ Return unicode representation of an image 
+
+        Args:
+            url (str) = A valid url for an image
+            width (int) = The char width for the unicode image
+        """
+
         CHAR_SEQ = u'█▛▜▀▙▌▚▘▟▞▐▝▄▖▗ '
 
         # Open the image and convert it to black and white
@@ -212,6 +289,15 @@ class Search_Screen(object):
 class Now_Playing_Screen(object):
 
     def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
+        """ A curses sub-screen for displaying the track currently playing
+
+        Args:
+            stdscreen (obj) = The main curses object for the program
+            lines (int) = The line height for this screen
+            columns (int) = The char width for this screen
+            begin_y (int) = The number of lines from main screen top to begin screen
+            begin_x (int) = The number of chars from main screen left to begin screen
+        """
         
         self.stdscreen = stdscreen
         self.height = lines
@@ -221,9 +307,15 @@ class Now_Playing_Screen(object):
         self.win.border(1)
 
     def format_now_playing(self, track):
+        """ Format display text for track for now playing screen """
         return ' {0}   -   {1}'.format(track.get('track_name'), track.get('artist_name'))
 
     def draw_screen(self, track):
+        """ Draw the results on screen 
+
+        Args:
+            track (obj) = Track object to be displayed
+        """ 
         self.win.clear()
         self.win.addstr(1, 5, self.format_now_playing(track))
         self.win.border(1)
@@ -232,6 +324,15 @@ class Now_Playing_Screen(object):
 class Input_Screen(object):
     
     def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
+        """ A curses sub-screen for allowing and capturing user input
+
+        Args:
+            stdscreen (obj) = The main curses object for the program
+            lines (int) = The line height for this screen
+            columns (int) = The char width for this screen
+            begin_y (int) = The number of lines from main screen top to begin screen
+            begin_x (int) = The number of chars from main screen left to begin screen
+        """
 
         self.stdscreen = stdscreen
         self.height = lines
@@ -241,6 +342,8 @@ class Input_Screen(object):
         self.win.border(1)
 
     def get_user_input(self, displayMsg):
+        """ Draw screen with displayMsg and return inputted text on enter key-press """
+
         self.win.addstr(1, 5, displayMsg)
         curses.curs_set(1)
         curses.echo()
