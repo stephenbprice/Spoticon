@@ -4,7 +4,7 @@ import threading, time
 import os.path as path
 
 from playQueue import PlayQueue
-from screens import Search_Screen, Now_Playing_Screen, Input_Screen, Message_Screen
+from screens import Search_Screen, Now_Playing_Screen, Input_Screen, Message_Screen, Help_Screen
 from spotifyModel import Spotify_Model
 from spotifyPlayer import Spotify_Player
 from webserver import Web_Server
@@ -34,6 +34,7 @@ class Spoticon(object):
             ord('.'): self.playQueue_add_all_tracks,
             ord('q'): self.display_playQueue,
             ord('p'): self.open_my_playlists,
+            ord('?'): self.toggle_helpscreen,
             curses.KEY_RESIZE: self.curses_screen_setup,
         }
 
@@ -59,6 +60,11 @@ class Spoticon(object):
         self.messageScreenWidth = None
         self.messageScreenX = None
         self.messageScreenY = None
+        self.helpScreenHeight = None
+        self.helpScreenWidth = None
+        self.helpScreenX = None
+        self.helpScreenY = None
+        self.activeScreen = None
         self.curses_screen_setup()
 
         # Variables for player features
@@ -95,8 +101,8 @@ class Spoticon(object):
 
         self.stdScreenHeight, self.stdScreenWidth = self.stdScreen.getmaxyx()
         
-        if self.stdScreenHeight < 20 or self.stdScreenWidth < 100:
-            self.quit('Spoticon cannot run with a screen resolution of 100x20. Please resize the window and restart Spoticon.');
+        if self.stdScreenHeight < 25 or self.stdScreenWidth < 100:
+            self.quit('Spoticon cannot run with a screen resolution of 25x100. Please resize the window and restart Spoticon.');
         else:
             self.nowPlayingScreenHeight = 6
             self.searchScreenHeight = self.stdScreenHeight - self.nowPlayingScreenHeight
@@ -109,18 +115,29 @@ class Spoticon(object):
             self.inputScreenY = int(self.stdScreenHeight / 2) - 1
             self.messageScreenY = int (self.stdScreenHeight * .66)
 
+            self.helpScreenWidth = int(self.stdScreenWidth * .66)
+            self.helpScreenHeight = int(self.stdScreenHeight * .66)
+            self.helpScreenX = int(self.stdScreenWidth * .16)
+            self.helpScreenY = int(self.stdScreenHeight * .16)
+            
+            self.activeScreen = 'searchscreen'
+
+    # ToDo: ADD HELP SCREN CHECKS
     def listen_for_commands(self):
         """ Listen and interpret user commands """
 
         while True:
-            if self.results:
-                self.searchScreen.draw_screen(self.results)
+            self.draw_search_screen()
             charInput = self.stdScreen.getch()
             if charInput in self.commands:
                 self.commands[charInput]()
             elif charInput == 27:
                 self.quit()
                 break
+
+    def draw_search_screen(self):
+        if self.results and self.activeScreen == 'searchscreen':
+            self.searchScreen.draw_screen(self.results)
 
     def parse_rc(self):
         """ Return parsed .spoticonrc file if one exists """
@@ -410,6 +427,15 @@ class Spoticon(object):
             self.results = self.backHistory.pop()
             self.searchScreen.draw_screen(self.results)
 
+    def toggle_helpscreen(self):
+        """ Toggle help screen """
+        if self.activeScreen == 'searchscreen':
+            self.activeScreen = 'helpscreen'
+            self.helpScreen = Help_Screen(self.stdScreen, self.helpScreenHeight, self.helpScreenWidth, self.helpScreenY, self.helpScreenX)
+            self.helpScreen.display_help()
+        else:
+            self.helpScreen.destroy_screen()
+            self.activeScreen = 'searchscreen'
 
 def run():
     """ Call Spoticon class with automatically passed curses object """

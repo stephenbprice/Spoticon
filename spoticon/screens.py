@@ -425,3 +425,57 @@ class Message_Screen(object):
         self.win.refresh()
         time.sleep(dur)
 
+class Help_Screen(object):
+
+    def __init__(self, stdscreen, lines, columns, begin_y, begin_x):
+        """ A curses sub-screen for displaying a help message
+
+        Args:
+            stdscreen (obj) = The main curses object for the program
+            lines (int) = The line height for this screen
+            columns (int) = The char width for this screen
+            begin_y (int) = The number of lines from main screen top to begin screen
+            begin_x (int) = The number of chars from main screen left to begin screen
+        """
+
+        self.stdscreen = stdscreen
+        self.height = lines
+        self.width = columns
+
+        self.win = self.stdscreen.derwin(self.height, self.width, begin_y, begin_x)
+        self.win.clear()
+        self.win.border(1)
+
+    def display_help(self):
+        help_text = '''
+
+        CONTROLS
+        ---------------
+        s:     Open Searchbox
+        ENTER: Activate line
+        j:     Move Down
+        k:     Move Up
+        l:     Move Right
+        h:     Move Left
+        a:     Get Track Album
+        A:     Get Track Artist
+        SPACE: Play/Pause Player
+        r:     Toggle Repeat One Track
+        p:     Open My Playlists
+        f:     Go forward in search history
+        b:     Go backward in search history
+        +:     Add Track to Queue
+        .:     Add all Tracks to Queue
+        L:     Play next song in Queue
+        H:     Play previous song in Queue
+        C:     Clear Queue
+        q:     Display Queue
+        '''
+        self.win.addstr(0,0,help_text)
+        self.win.refresh()
+
+    def destroy_screen(self):
+        del self.win
+
+
+
