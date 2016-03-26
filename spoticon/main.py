@@ -113,7 +113,8 @@ class Spoticon(object):
         """ Listen and interpret user commands """
 
         while True:
-            self.searchScreen.draw_screen(self.results)
+            if self.results:
+                self.searchScreen.draw_screen(self.results)
             charInput = self.stdScreen.getch()
             if charInput in self.commands:
                 self.commands[charInput]()
@@ -277,18 +278,19 @@ class Spoticon(object):
     def activate_selected_line(self):
         """ Activate current highlighted line """
 
-        line = self.searchScreen.get_highlighted_line()
-        if line['category'] == 'artist':
-            self.open_artist(line)
-        elif line['category'] == 'playlist':
-            self.open_playlist(line)
-        elif line['category'] in ['album', 'album_art']:
-            album = self.searchScreen.get_album()
-            self.open_album(album)
-        elif line['category'] == 'track':
-            self.play_track(line)
-        else:
-            pass
+        if self.searchScreen.results:
+            line = self.searchScreen.get_highlighted_line()
+            if line['category'] == 'artist':
+                self.open_artist(line)
+            elif line['category'] == 'playlist':
+                self.open_playlist(line)
+            elif line['category'] in ['album', 'album_art']:
+                album = self.searchScreen.get_album()
+                self.open_album(album)
+            elif line['category'] == 'track':
+                self.play_track(line)
+            else:
+                pass
 
     def play_pause(self):
         """ Toggle Spotify Player play/pause """
