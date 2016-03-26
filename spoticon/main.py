@@ -227,8 +227,9 @@ class Spoticon(object):
 
     def get_track_artist(self):
         """ Open artist results for track artist """
-        line - self.searchScreen.get_highlighted_line()
 
+        line = self.searchScreen.get_highlighted_line()
+        self.open_artist(line)
 
     def open_album(self, item):
         """ Get and update results with tracks from album
