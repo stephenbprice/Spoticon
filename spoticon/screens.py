@@ -181,21 +181,21 @@ class Results_Window(Scroll_Window):
         """ Order search results into array """
         self.orderedLines= []
 
-        if 'playlists' in self.lines:
+        if 'playlists' in self.lines and len(self.lines['playlists']):
             self.orderedLines.append({
                 'title': 'PLAYLISTS',
                 'category': 'title_bar',
             })
             self.orderedLines += self.lines['playlists']
 
-        if 'artists' in self.lines:
+        if 'artists' in self.lines and len(self.lines['artists']):
             self.orderedLines.append({
                 'title': 'ARTISTS',
                 'category': 'title_bar',
             })
             self.orderedLines += self.lines['artists']
 
-        if 'albums' in self.lines:
+        if 'albums' in self.lines and len(self.lines['albums']):
             self.orderedLines.append({
                 'title': 'ALBUMS',
                 'category': 'title_bar',
