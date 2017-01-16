@@ -97,6 +97,7 @@ class Scroll_Window(Window):
             return
         elif increment == 1 and nextLineNum == self.height and (self.topLineNum + self.height) != len(self.orderedLines):
             self.topLineNum += 1
+            self.draw_screen()
             return
 
         #Scroll highlight line
