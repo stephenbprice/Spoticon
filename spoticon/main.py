@@ -164,7 +164,7 @@ class Spoticon(object):
             Args:
                 artist (obj) = An artist object
         """
-        if 'artist_id' in artist:
+        if artist and 'artist_id' in artist:
             self.update(self.spotifyModel.get_artist(artist['artist_id']))
 
     def get_track_album(self):
@@ -180,7 +180,7 @@ class Spoticon(object):
             Args:
                 item (obj) = An spotify result object
         """
-        if 'album_id' in item:
+        if item and 'album_id' in item:
             name = item['album_name'] if 'album_name' in item else ''
             self.update(self.spotifyModel.get_album(item['album_id'], album_name=name))
         else:
@@ -203,7 +203,7 @@ class Spoticon(object):
             Args:
                 track (obj) = The track to play
         """
-        if 'track_uri' in track:
+        if track and 'track_uri' in track:
             self.nowPlaying = track
             self.spotifyPlayer.play_track(track['track_uri'])
             self.nowplayingWindow.draw_screen(track=track)
