@@ -59,7 +59,7 @@ class Scroll_Window(Window):
 
     def get_highlighted_line(self):
         """ Return the object represented by the highlighted line """
-        return self.orderedLines[self.highlightLineNum] if self.orderedLines else None
+        return self.orderedLines[self.topLineNum + self.highlightLineNum] if self.orderedLines else None
 
     def draw_screen(self, lines=None):
         """ Draw the results on screen 
