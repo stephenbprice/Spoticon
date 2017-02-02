@@ -1,4 +1,5 @@
 .*
+*.pyc
 spoticon.egg-info
 spoticon/__pycache__
 build/*
