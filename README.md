@@ -1,5 +1,8 @@
 # Spoticon
 
+![](https://github.com/stephenbprice/Spoticon/blob/master/img/Title%20Menu.png)
+![](https://github.com/stephenbprice/Spoticon/blob/master/img/Sample%20Search.png)
+
 A mouseless Spotify UI in your terminal for Mac OSX using Python3. 
 
 ## Requirements
